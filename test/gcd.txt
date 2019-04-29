@@ -16,8 +16,14 @@ int gcd(int a, int b)
 
 void main()
 {
-	int a=15;
-	int b=20;
-	int c;
-	printf(c+gcd(a, b));
+	int a;
+	int b;
+	int i;
+	while(i<=3){
+		scanf(a);
+		scanf(b);
+		printf(gcd(a, b));
+		i=i+1;
+	}
+
 }

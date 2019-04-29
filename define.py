@@ -74,6 +74,10 @@ class MIPS:
                 print('li\t$v0,1')
                 print('move\t$a0,'+self.des)
                 print('syscall')
+            elif(self.opr=='scanf'):
+                print('li\t$v0,5')
+                print('syscall')
+                print('sw\t$v0'+','+self.des)
         elif(self.r2 is None):#I
             if(self.opr=='='):#mov
                 print('move\t'+self.des+','+self.r1)
@@ -179,7 +183,7 @@ KEY = ['auto','break','case','const','continue','default','do','else','enum','ex
     'long','register','return','short','signed','sizeof','static','struct','switch','typedef','unsigned','union','volatile','while']
 DIGIT = ['0','1','2','3','4','5','6','7','8','9']
 BOUND = ['(',')','{','}','[',']',';',',']
-FUNCTION = ['printf']
+FUNCTION = ['printf','scanf']
 TYPE = ['int','void']
 WS = [' ','\n','\t']
 

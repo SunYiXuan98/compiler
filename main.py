@@ -175,6 +175,12 @@ def gen(opr,des,sou1=None,sou2=None):
         print(des+':')
         MIDCODES.append((opr,des))
         return
+    
+    if(opr=='scanf'):
+        print((opr,des))
+        MIDCODES.append((opr,des))
+        return
+
     if(opr in FUNCTION or opr in ['return','push','pop']):
         des=exchange2reg(des)
         print((opr,des))
@@ -438,11 +444,12 @@ class DECLARE:
 class SYSTEMCALL:
     def S(self):
         opr = token.Name
-        para = None
         getNextToken()
         if(token.Name!='('):
             exit('expect (')
         getNextToken()
+        if(opr=='scanf'):
+            idname=judgeVAL(token.Name)
         E_reg=ASSIGN().E()
         getNextToken()
         if(token.Name!=')'):
@@ -450,7 +457,10 @@ class SYSTEMCALL:
         getNextToken()
         if(token.Name!=';'):
             exit('expect ;')
-        gen(opr,E_reg)
+        if(opr=='scanf'):
+            gen(opr,idname)
+        else:
+            gen(opr,E_reg)
 
 class IF:
     def S(self,S_next):
@@ -829,11 +839,11 @@ class PROGRAM:
         
 
 
-with open('test/c.txt','r') as f:
+with open('test/fib.txt','r') as f:
     s=f.read()
 getTokens(s)
-# for i in tokens:
-#     i.show()
+for i in tokens:
+    i.show()
 
 if(tokens[-1].Name!=';' and tokens[-1].Name!='}'):
     exit('expect Last BOUND')

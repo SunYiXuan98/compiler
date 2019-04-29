@@ -7,6 +7,10 @@ int fib(int n)
 
 void main()
 {
-	int n=4;
-	printf(fib(n));
+	int n;
+	while(n<=10){
+		printf(fib(n));
+		n=n+1;
+	}
+	
 }
