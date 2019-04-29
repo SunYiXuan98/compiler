@@ -1,0 +1,47 @@
+int mod(int a, int b)
+{
+	while(a >= b)
+	{	
+		a = a - b;
+	}
+	return(a);
+}
+
+void factorize(int n)
+{
+	int p, flag;
+	p = 2;
+	flag = 1;
+	printf(n);
+	printf("=");
+	while(n >= p * p)
+	{
+		while(mod(n, p) == 0)
+		{
+			if(flag)
+			{
+				printf(p);
+				flag = 0;
+			}
+			else printf("*", p);
+			n = n / p;
+		}
+		p = p + 1;
+	}
+	if(n != 1)
+	{
+		if(flag)
+		{
+			printf(n);
+			flag = 0;
+		}
+		else printf("*", n);
+	}
+}
+
+void main()
+{
+	int n;
+	scanf(n);
+	factorize(n);
+}

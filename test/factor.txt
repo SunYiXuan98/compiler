@@ -1,0 +1,18 @@
+int factor(int a)
+{
+	if(a==0)
+	{
+		return(1);
+	}
+	else
+	{
+		return(factor(a-1) * a);
+	}
+}
+
+void main()
+{
+	int a;
+	scanf(a);
+	printf(factor(a));
+}

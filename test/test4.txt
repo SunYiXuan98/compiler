@@ -1,0 +1,43 @@
+<<<<<<< .mine
+void main()
+=======
+const one=1,two=2,three=3;
+void move1(int f,int t)
+{ 
+  printf(f);
+  printf(" move to ",t); 
+  return ;
+ 
+} 
+void moven(int m,int a,int b,int c) 
+>>>>>>> .r125
+{
+<<<<<<< .mine
+	int a, sum;
+	sum = 0;
+	while(sum < 100)
+	{
+		scanf(a);
+		sum= sum +a;
+	}
+	printf(sum);
+}=======
+  if(m==1) 
+    move1(a,c); 
+  else 
+  { 
+    moven(m-1,a,c,b); 
+    move1(a,c); 
+    moven(m-1,b,a,c); 
+  } 
+
+	return ;
+} 
+void main() 
+{ 
+ int n; 
+ printf("please input the numbers of disks: "); 
+ scanf(n); 
+ printf("the step of moving disks: ",n); 
+ moven(n,one,two,three); 
+} >>>>>>> .r125

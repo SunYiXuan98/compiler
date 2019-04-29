@@ -1,0 +1,13 @@
+void main()
+{
+	int i, j;
+	for(i = 0; i <= 88; i= i + 1)
+	{
+		j = 88 - i;
+		if(2 * i + 4 * j == 244)
+		{
+			printf("chicken = ", i);
+			printf("rabit = ", j);
+		}
+	}
+}

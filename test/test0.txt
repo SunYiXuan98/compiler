@@ -1,0 +1,13 @@
+void main()
+{
+	int i,j,k;
+	scanf(k);
+	if(k > 1)
+		i = k + 1;
+	else
+		j = k + 2;
+	if(k > 2)
+		printf(i);
+	else
+		printf(j);	
+}

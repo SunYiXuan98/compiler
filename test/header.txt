@@ -1,0 +1,16 @@
+;====================Awaken's C0 Compiler====================
+; 标号以@@name@scope的形式命名
+; 函数以@scope的形式命名
+; 字面值以$$value的形式命名
+; 全局量以$name@global的形式命名
+; 常量以$name@scope的形式命名
+; 全局变量以$name@scope的形式命名
+
+.386									;32位模式
+.model flat, stdcall					;32位寻址, stdcall模式
+option casemap :none					;大小写敏感
+
+includelib msvcrt.lib	;vc运行时环境
+printf PROTO C:ptr sbyte, :vararg
+scanf PROTO C:ptr sbyte, :vararg
+

@@ -1,0 +1,23 @@
+int sum(int a, int b)
+{
+	int i, sum;
+	printf(a);
+	printf(b);
+	i = a;
+	sum = 0;
+	while (i <= b)
+	{
+		printf(i);
+		sum = sum + i;
+		i = 1 + i;
+	}
+	return (sum);
+}
+
+void main()
+{
+	int a, b;
+	scanf(a);
+	scanf(b);
+	printf(sum(a, b));
+}

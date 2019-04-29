@@ -1,0 +1,50 @@
+float power(float x, int i)
+{
+	float pow;
+	pow = 1;
+	while(i)
+	{
+		pow = pow * x;
+		i = i -1;
+	}
+	return(pow);
+}
+
+float fabs(float x)
+{
+	if(x < 0)
+		return(-x);
+	else
+		return(x);
+}
+float arctan(float x)
+{
+	int i, sign;
+	float former, cur;
+	i = 1;
+	sign = 1;
+	cur = 0;
+	former = 100;
+	while(fabs(former - cur) > 0.000001)
+	{
+		former = cur;
+		
+		cur = former + sign * power(x, i) / i;
+		i = i + 2;
+		sign = -sign;
+	}
+	return(cur);
+}
+
+float compute_pi()
+{
+	float a;
+	a = arctan(0.50);
+	a = a + arctan(0.5 / 1.5);
+	return(4*a);	
+}
+
+void main()
+{
+	printf(compute_pi());
+}

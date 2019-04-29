@@ -1,0 +1,15 @@
+void float_test(float a, float b)
+{
+	printf(a + b);
+	printf(a - b);
+	printf(a * b);
+	printf(a / b);	
+}
+
+void main()
+{
+	float a, b;
+	scanf(a);
+	scanf(b);
+	float_test(a, b);
+}

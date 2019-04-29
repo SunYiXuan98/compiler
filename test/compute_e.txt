@@ -1,0 +1,24 @@
+float factor(int n)
+{
+	if(n == 0)
+		return(1);
+	else
+		return(factor(n-1) * n);
+}
+
+float compute_e()
+{
+	int i;
+	float sum;
+	sum = 0;
+	for(i = 0; i < 100; i =  i + 1)
+	{
+		sum = sum + 1 / factor(i);
+	}
+	return(sum);
+}
+
+void main()
+{
+	printf(compute_e());
+}
