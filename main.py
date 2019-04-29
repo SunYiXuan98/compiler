@@ -1,3 +1,4 @@
+# coding=utf-8
 from define import *
 from tool import *
 import re
@@ -819,7 +820,7 @@ class PROGRAM:
         
 
 
-with open('test\c.txt','r') as f:
+with open('test/c.txt','r') as f:
     s=f.read()
 getTokens(s)
 # for i in tokens:
