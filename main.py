@@ -75,7 +75,10 @@ def newLable():
 def getRegt(n):
     global point_t
     if(n==-1):
-        reg = '$t'+str(point_t-1)
+        if(point_t==0):
+            reg='$t0'
+        else:
+            reg = '$t'+str(point_t-1)
         return reg
     for _ in range(10):
         reg = '$t'+str(point_t)
@@ -304,7 +307,7 @@ class ASSIGN:
 
         if(token.Type==FUNC_CALL):
             FUNC().CALL()
-            temp_reg=getRegt(1)
+            temp_reg=getRegt(-1)
             gen('=',temp_reg,'$v0')
             REG_USED.add(temp_reg)
             
@@ -640,16 +643,17 @@ class FUNC:#函数的寄存器分配与保护还存在问题
         
         if(FUNCTABLE[Fname]['param_num']!=nums):
             exit('func:'+Fname+' param_num not match')
-        p=list(REG_USED)
-        gen('protect',p)
+        p=[i for i in REG_USED if i not in stack]
+        gen('protect',p)#保护外部正在使用寄存器
         
         stack.reverse()
-        for E_reg in stack:
-            gen('push',E_reg)
+        gen('protect',stack)#形参入栈
         
         gen('call',Fname)
+
+        gen('free',len(stack))#形参出栈
         p.reverse()
-        gen('free',p)
+        gen('free',p)#外部正在使用寄存器恢复
         
     
 

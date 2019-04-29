@@ -17,17 +17,29 @@ class MIPS:
             elif(self.opr=='protect'):
                 self.des.reverse()
                 num_reg = len(self.des)
+                if(num_reg==0):
+                    return
                 print('addi\t$sp,$sp,'+str(-4*num_reg))
                 for t in range(num_reg):
                     reg=self.des[t]
-                    print('sw\t'+reg+','+str(t*4)+'($sp)')
+                    try:
+                        int(reg)
+                        print('li\t$t9,'+reg)
+                        print('sw\t$t9,'+str(t*4)+'($sp)')
+                    except:
+                        print('sw\t'+reg+','+str(t*4)+'($sp)')
             
             elif(self.opr=='free'):
-                num_reg = len(self.des)
-                for t in range(num_reg):
-                    reg=self.des[t]
-                    print('lw\t'+reg+','+str(t*4)+'($sp)')
-                print('addi\t$sp,$sp,'+str(4*num_reg))
+                if(isinstance(self.des,int)):
+                    print('addi\t$sp,$sp,'+str(4*self.des))
+                else:
+                    num_reg = len(self.des)
+                    if(num_reg==0):
+                        return
+                    for t in range(num_reg):
+                        reg=self.des[t]
+                        print('lw\t'+reg+','+str(t*4)+'($sp)')
+                    print('addi\t$sp,$sp,'+str(4*num_reg))
 
             elif(self.opr=='return'):
                 print('move\t$sp,$fp')

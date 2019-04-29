@@ -18,5 +18,6 @@ void main()
 {
 	int a=15;
 	int b=20;
-	printf(gcd(a, b));
+	int c;
+	printf(c+gcd(a, b));
 }
