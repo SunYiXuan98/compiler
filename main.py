@@ -180,9 +180,6 @@ def gen(opr,des,sou1=None,sou2=None):
     
     if(opr=='load' or opr =='store'):
         des=exchange2reg(des)
-    else:   
-        sou1=exchange2reg(sou1)
-        sou2=exchange2reg(sou2)
 
     if(sou1 is None and sou2 is None):
         print((opr,des))
@@ -307,20 +304,22 @@ class ASSIGN:
 
         if(token.Type==FUNC_CALL):
             FUNC().CALL()
-            temp_reg=getRegt(0)
+            temp_reg=getRegt(1)
             gen('=',temp_reg,'$v0')
+            REG_USED.add(temp_reg)
             
             return temp_reg
         elif(token.Type=="VAL"):
             idname=judgeVAL(token.Name)
-            temp_reg=getRegt(0)
+            temp_reg=getRegt(1)
             gen('load',temp_reg,idname,None)
+            REG_USED.add(temp_reg)
             
             if(idname==token.Name):#如果是全局变量
                 WHOLE_VALTABLE[token.Name]['reg']=temp_reg
             else:
                 LOCAL_VALTABLE[token.Name]['reg']=temp_reg
-            Fval = token.Name
+            Fval = temp_reg
             return Fval
         elif(token.Type=='DIGIT'):
             Fval = token.Name
@@ -641,10 +640,16 @@ class FUNC:#函数的寄存器分配与保护还存在问题
         
         if(FUNCTABLE[Fname]['param_num']!=nums):
             exit('func:'+Fname+' param_num not match')
+        p=list(REG_USED)
+        gen('protect',p)
+        
         stack.reverse()
         for E_reg in stack:
             gen('push',E_reg)
+        
         gen('call',Fname)
+        p.reverse()
+        gen('free',p)
         
     
 

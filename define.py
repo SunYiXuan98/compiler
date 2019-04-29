@@ -14,6 +14,21 @@ class MIPS:
         if(self.r1 is None):
             if(self.opr=='call'):
                 print('jal\t'+self.des)
+            elif(self.opr=='protect'):
+                self.des.reverse()
+                num_reg = len(self.des)
+                print('addi\t$sp,$sp,'+str(-4*num_reg))
+                for t in range(num_reg):
+                    reg=self.des[t]
+                    print('sw\t'+reg+','+str(t*4)+'($sp)')
+            
+            elif(self.opr=='free'):
+                num_reg = len(self.des)
+                for t in range(num_reg):
+                    reg=self.des[t]
+                    print('lw\t'+reg+','+str(t*4)+'($sp)')
+                print('addi\t$sp,$sp,'+str(4*num_reg))
+
             elif(self.opr=='return'):
                 print('move\t$sp,$fp')
                 print('lw\t$fp,0($sp)')
@@ -164,7 +179,7 @@ tokens = []
 token = None
 MIDCODES=[]
 
-REG_USED=[]
+REG_USED=set([])
 WHOLE_VALTABLE={}#相当于堆
 LOCAL_VALTABLE={}#记录局部变量在栈中的位置
 MEMTABLE={}
