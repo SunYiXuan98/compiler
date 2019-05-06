@@ -34,7 +34,6 @@ class TOKEN:
     
     def to_string(self,s):
         isok=0
-        print(s)
         for ind,ch in enumerate(s):
             if(ind==0):
                 continue
@@ -108,12 +107,32 @@ def getRegt(n):
 
     return reg
 
+def getMarks(s):
+    res=[]
+    for ind,ch in enumerate(s):
+        if(ch=='"'):
+            res.append(ind)
+    if(len(res)%2==1):
+        exit("lack \"")
+    return res[:2]
+
 def tokenBack():
     global point_token
     point_token-=1
 
 def getTokens(s):
-    words = s.split()
+    words=[]#词法的预处理
+    while(1):
+        r=getMarks(s)
+        if(len(r)==0):
+            break
+        x=r[0]
+        y=r[1]
+        words+=s[:x].split()
+        words.append(s[x:y+1])
+        s=s[y+1:]
+    words+=s.split()
+
     for s in words:
         while(len(s)):
             ch=s[0]
@@ -148,7 +167,6 @@ def getTokens(s):
                 tokens.append(token)
             
             elif ch=='"':
-                print(s)
                 res,i = TOKEN().to_string(s)
                 token = TOKEN(res,'STRING')
                 s=s[i:]
@@ -873,7 +891,7 @@ class PROGRAM:
         
 
 
-with open('test/c.txt','r') as f:
+with open('test/fib.txt','r') as f:
     s=f.read()
 getTokens(s)
 for i in tokens:

@@ -156,6 +156,7 @@ class MIPS:
 
 
 def seg_show():
+    print('\n'*2)
     print('.data')
     for val in WHOLE_VALTABLE.keys():
         Type = '.word' if WHOLE_VALTABLE[val]['width']==4 else '.byte'

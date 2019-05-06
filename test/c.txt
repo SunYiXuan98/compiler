@@ -2,7 +2,7 @@ int g(){
 	return 3;
 }
 int f(){
-	printf("nihao\n");
+	printf("nihao  \n");
 	return g();
 }
 
