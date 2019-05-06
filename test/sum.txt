@@ -1,22 +1,24 @@
 int sum(int a, int b)
 {
-	int i, sum;
+	int i;
+	int s;
 	printf(a);
 	printf(b);
 	i = a;
-	sum = 0;
+	s = 0;
 	while (i <= b)
 	{
 		printf(i);
-		sum = sum + i;
+		s = s + i;
 		i = 1 + i;
 	}
-	return (sum);
+	return (s);
 }
 
 void main()
 {
-	int a, b;
+	int a;
+	int b;
 	scanf(a);
 	scanf(b);
 	printf(sum(a, b));

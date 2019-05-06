@@ -70,10 +70,6 @@ class MIPS:
                 print(self.des+':')
             elif(self.opr=='goto'):
                 print('j\t'+self.des)
-            elif(self.opr=='printf'):
-                print('li\t$v0,1')
-                print('move\t$a0,'+self.des)
-                print('syscall')
             elif(self.opr=='scanf'):
                 print('li\t$v0,5')
                 print('syscall')
@@ -81,6 +77,16 @@ class MIPS:
         elif(self.r2 is None):#I
             if(self.opr=='='):#mov
                 print('move\t'+self.des+','+self.r1)
+            
+            elif(self.opr=='printf'):#printf
+                if(self.r1=='string'):
+                    print('li\t$v0,4')
+                    print('la\t$a0,'+self.des)
+                    print('syscall')
+                else:
+                    print('li\t$v0,1')
+                    print('move\t$a0,'+self.des)
+                    print('syscall')
 
             elif(self.opr=='load'):#lw
                 print('lw\t'+self.des+','+self.r1)
@@ -154,6 +160,8 @@ def seg_show():
     for val in WHOLE_VALTABLE.keys():
         Type = '.word' if WHOLE_VALTABLE[val]['width']==4 else '.byte'
         print(val+':\t'+Type+'\t'+WHOLE_VALTABLE[val]['value'])
+    for name in WHOLE_STRING.keys():
+        print(name+':\t.ascii\t'+WHOLE_STRING[name])
     print('.text')
     print('j\tmain')
     for four in MIDCODES:
@@ -196,13 +204,16 @@ token = None
 MIDCODES=[]
 
 REG_USED=set([])
-WHOLE_VALTABLE={}#相当于堆
-LOCAL_VALTABLE={}#记录局部变量在栈中的位置
-MEMTABLE={}
-FUNCTABLE={}
+WHOLE_VALTABLE={}#相当于堆 {'type':T_type,'width':4,'offset':offset,'value':initVal,'reg':None}
+LOCAL_VALTABLE={}#记录局部变量在栈中的位置 LOCAL_VALTABLE[idname]={'type':T_type,'width':4,'offset':str(stack_offset),'value':initVal,'reg':None}
+MEMTABLE={}#MEMTABLE[offset]=idname
+FUNCTABLE={}#{'param_num':None,'return_type':tokens[i-1].Name}
+NOWFUNC=None
 
 FUNC_CALL='FUNC_CALL'
 FUNC_DECLARE='FUNC_DECLARE'
 
 ISLOCAL='islocal'
 ISWHOLE='iswhole'
+
+WHOLE_STRING={}

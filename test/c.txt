@@ -1,6 +1,8 @@
+void f(){
+	printf("nihao\n");
+}
+
 void main()
 {
-	int a;
-	scanf(a);
-	printf(a);
+	f();
 }

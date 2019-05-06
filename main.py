@@ -11,6 +11,7 @@ point_token = 0
 point_t=0
 point_s=0
 point_label=0
+point_string=0
 class TOKEN:
     def __init__(self,Name=None,Type=None):
         self.Name = Name
@@ -30,6 +31,19 @@ class TOKEN:
         r= re.match(r'^[\+\-\*/]|[<>=!]=?|\|\||&&',s)
         res = r.group()
         return res,len(res)
+    
+    def to_string(self,s):
+        isok=0
+        print(s)
+        for ind,ch in enumerate(s):
+            if(ind==0):
+                continue
+            if(ch=='"'):
+                isok=1
+                break
+        if(not isok):
+            exit('no " match')
+        return s[:ind+1],len(s[:ind+1])
 
     def show(self):
         print((self.Name,self.Type))
@@ -72,6 +86,12 @@ def newLable():
     point_label+=1
     return lable
 
+def newStringName():
+    global point_string
+    name = 'string'+str(point_string)
+    point_string+=1
+    return name
+
 def getRegt(n):
     global point_t
     if(n==-1):
@@ -86,16 +106,6 @@ def getRegt(n):
         if reg not in REG_USED:
             break
 
-    return reg
-
-def getRegs():
-    global point_s
-    for _ in range(8):
-        reg = '$s'+str(point_s)
-        point_s+=1
-        if reg not in REG_USED:
-            break
-        
     return reg
 
 def tokenBack():
@@ -136,8 +146,17 @@ def getTokens(s):
                     token = TOKEN(res,'VAL')
                 s=s[i:]
                 tokens.append(token)
+            
+            elif ch=='"':
+                print(s)
+                res,i = TOKEN().to_string(s)
+                token = TOKEN(res,'STRING')
+                s=s[i:]
+                tokens.append(token)
             else:
-                exit(token.Name+'.next is not legal')
+                for i in tokens:
+                    i.show()
+                exit(ch+' is not legal')
     
     for i,t in enumerate(tokens):#处理函数名
         if(t.Name in FUNCTABLE.keys()):
@@ -162,10 +181,6 @@ def exchange2reg(id):
     return id
     
 def gen(opr,des,sou1=None,sou2=None):
-    if(opr=='goto'):
-        print((opr,des))
-        MIDCODES.append((opr,des))
-        return
     if(opr == 'label'):
         try:
             if((opr,des)==MIDCODES[-1]):
@@ -175,17 +190,9 @@ def gen(opr,des,sou1=None,sou2=None):
         print(des+':')
         MIDCODES.append((opr,des))
         return
-    
-    if(opr=='scanf'):
-        print((opr,des))
-        MIDCODES.append((opr,des))
-        return
 
-    if(opr in FUNCTION or opr in ['return','push','pop']):
+    if(opr in ['return','push','pop']):
         des=exchange2reg(des)
-        print((opr,des))
-        MIDCODES.append((opr,des))
-        return
     
     if(opr=='load' or opr =='store'):
         des=exchange2reg(des)
@@ -450,17 +457,22 @@ class SYSTEMCALL:
         getNextToken()
         if(opr=='scanf'):
             idname=judgeVAL(token.Name)
-        E_reg=ASSIGN().E()
+            gen(opr,idname)
+        else:
+            if(token.Type=='STRING'):
+                name=newStringName()
+                WHOLE_STRING[name]=token.Name
+                gen(opr,name,'string')
+            else:
+                E_reg=ASSIGN().E()
+                gen(opr,E_reg,'val')
+
         getNextToken()
         if(token.Name!=')'):
             exit('expect )')
         getNextToken()
         if(token.Name!=';'):
             exit('expect ;')
-        if(opr=='scanf'):
-            gen(opr,idname)
-        else:
-            gen(opr,E_reg)
 
 class IF:
     def S(self,S_next):
@@ -626,7 +638,7 @@ class LOOP:
         if(token.Name!='}'):
             exit('if:expect }')
 
-class FUNC:#函数的寄存器分配与保护还存在问题
+class FUNC:
     def CALL(self):#解析调用
         if(token.Type==FUNC_CALL):
             Fname=token.Name
@@ -640,16 +652,17 @@ class FUNC:#函数的寄存器分配与保护还存在问题
         getNextToken()
         nums=0
         stack=[]
-        while(1):
-            E_reg=ASSIGN().E()
-            stack.append(E_reg)#参数需要反向压栈
-            nums+=1
+        if(token.Name!=')'):
+            while(1):
+                E_reg=ASSIGN().E()
+                stack.append(E_reg)#参数需要反向压栈
+                nums+=1
 
-            getNextToken()
-            if(token.Name==')'):
-                break
-            elif(token.Name==','):
                 getNextToken()
+                if(token.Name==')'):
+                    break
+                elif(token.Name==','):
+                    getNextToken()
         
         if(FUNCTABLE[Fname]['param_num']!=nums):
             exit('func:'+Fname+' param_num not match')
@@ -664,12 +677,33 @@ class FUNC:#函数的寄存器分配与保护还存在问题
         gen('free',len(stack))#形参出栈
         p.reverse()
         gen('free',p)#外部正在使用寄存器恢复
+    
+    def RETURN(self):#解析return
+        getNextToken()
+        if(token.Name==';'):
+            if(FUNCTABLE[NOWFUNC]['return_type']=='void'):
+                gen('return',None)
+            else:
+                exit('func need return val')
+        else:
+            if(FUNCTABLE[NOWFUNC]['return_type']=='int'):
+                E_reg=ASSIGN().E()
+                gen('return',E_reg)
+                getNextToken()
+                if(token.Name!=';'):
+                    exit('expect ;')
+            else:
+                exit('void func return int')
+
         
     
 
 class PROGRAM:
     def P(self):
         self.whole_declare()
+        # while(1):
+        #     if(self.func_declare()==-1):
+        #         break
         self.func_declare()
         self.void_main()
 
@@ -678,7 +712,7 @@ class PROGRAM:
         if(token.Type!='TYPE'):
             exit('func declare wrong')
         if(token.nextToken().Name=='main'):
-            return
+            return -1
         ret_type=token.Name
 
         getNextToken()
@@ -687,9 +721,10 @@ class PROGRAM:
         Fname=token.Name
 
         getNextToken()
-        global LOCAL_VALTABLE
+        global LOCAL_VALTABLE,NOWFUNC
         LOCAL_VALTABLE,param_num=DECLARE().param_list()#解析参数列表
         FUNCTABLE[Fname]['param_num']=param_num
+        NOWFUNC=Fname
 
         getNextToken()
         if(token.Name!='{'):
@@ -727,10 +762,13 @@ class PROGRAM:
         getNextToken()
         if(token.Name!='main'):
             exit('main func name wrong')
+
         getNextToken()
-        global LOCAL_VALTABLE
+        global LOCAL_VALTABLE,NOWFUNC
         LOCAL_VALTABLE,param_num=DECLARE().param_list()#解析参数列表
         FUNCTABLE['main']['param_num']=param_num
+        NOWFUNC='main'
+
         getNextToken()
         if(token.Name!='{'):
             exit('main func lack {')
@@ -781,12 +819,10 @@ class PROGRAM:
             while(1):
                 init_sentence()
                 if(token.Name=='return'):
-                    getNextToken()
-                    E_reg=ASSIGN().E()
-                    gen('return',E_reg)
-                    getNextToken()
-                    if(token.Name!=';'):
-                        exit('expect ;')
+                    FUNC().RETURN()
+                
+                elif(token.Type==FUNC_CALL):
+                    FUNC().CALL()
 
                 elif(token.Name in TYPE):
                     DECLARE().LD()
@@ -822,12 +858,10 @@ class PROGRAM:
 
         else:
             if(token.Name=='return'):
-                getNextToken()
-                E_reg=ASSIGN().E()
-                gen('return',E_reg)
-                getNextToken()
-                if(token.Name!=';'):
-                    exit('expect ;')
+                FUNC().RETURN()
+
+            elif(token.Type==FUNC_CALL):
+                FUNC().CALL()
 
             elif(token.Name in TYPE):
                 DECLARE().LD()
@@ -839,7 +873,7 @@ class PROGRAM:
         
 
 
-with open('test/fib.txt','r') as f:
+with open('test/c.txt','r') as f:
     s=f.read()
 getTokens(s)
 for i in tokens:
@@ -852,7 +886,7 @@ getNextToken()
 PROGRAM().P()
 
 
-print(WHOLE_VALTABLE)
-print(LOCAL_VALTABLE)
+# print(WHOLE_VALTABLE)
+# print(LOCAL_VALTABLE)
 
 seg_show()
