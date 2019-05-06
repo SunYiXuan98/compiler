@@ -1,8 +1,14 @@
-void f(){
+int g(){
+	return 3;
+}
+int f(){
 	printf("nihao\n");
+	return g();
 }
 
 void main()
 {
-	f();
+	int a;
+	a=f();
+	printf(a);
 }

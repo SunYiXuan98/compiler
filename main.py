@@ -701,10 +701,10 @@ class FUNC:
 class PROGRAM:
     def P(self):
         self.whole_declare()
-        # while(1):
-        #     if(self.func_declare()==-1):
-        #         break
-        self.func_declare()
+        while(1):
+            if(self.func_declare()==-1):
+                break
+        # self.func_declare()
         self.void_main()
 
     def func_declare(self):
