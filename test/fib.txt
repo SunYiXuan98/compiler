@@ -15,3 +15,4 @@ void main()
 	}
 	
 }
+git commit -m "实现了const定义常量，可以在全局定义段、局部定义段、参数列表

@@ -186,7 +186,7 @@ OPR = ['+','-','*','/','<','>','<=','>=','==','!=','!','||','&&','=']
 ADDOPR = ['+','-']
 MULOPR = ['*','/']
 COMPOPR = ['<','>','<=','>=','==','!=']
-LOGIOPR = ['!','||','&&']
+LOGICOPR = ['!','||','&&']
 
 KEY = ['auto','break','case','const','continue','default','do','else','enum','extern','for','goto','if',
     'long','register','return','short','signed','sizeof','static','struct','switch','typedef','unsigned','union','volatile','while']
@@ -205,8 +205,8 @@ token = None
 MIDCODES=[]
 
 REG_USED=set([])
-WHOLE_VALTABLE={}#相当于堆 {'type':T_type,'width':4,'offset':offset,'value':initVal,'reg':None}
-LOCAL_VALTABLE={}#记录局部变量在栈中的位置 LOCAL_VALTABLE[idname]={'type':T_type,'width':4,'offset':str(stack_offset),'value':initVal,'reg':None}
+WHOLE_VALTABLE={}#全局、静态数据区 {'type':T_type,'width':4,'offset':offset,'value':initVal,'reg':None,'const':False}
+LOCAL_VALTABLE={}#记录局部变量在栈中的位置 LOCAL_VALTABLE[idname]={'type':T_type,'width':4,'offset':str(stack_offset),'value':initVal,'reg':None,'const':False}
 MEMTABLE={}#MEMTABLE[offset]=idname
 FUNCTABLE={}#{'param_num':None,'return_type':tokens[i-1].Name}
 NOWFUNC=None
@@ -216,5 +216,6 @@ FUNC_DECLARE='FUNC_DECLARE'
 
 ISLOCAL='islocal'
 ISWHOLE='iswhole'
+ISCONST=False
 
 WHOLE_STRING={}

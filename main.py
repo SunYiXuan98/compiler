@@ -54,7 +54,7 @@ class TOKEN:
         return tokens[point_token-2]
 
 def init_sentence():
-    global point_r,point_t
+    global point_t
     point_r=0
     point_t=0
     for attr in WHOLE_VALTABLE.values():
@@ -233,12 +233,24 @@ def judgeVAL(idname):
     else:
         exit('val:'+idname+' is not declared')
 
+def judgeCONST(VALname):
+    # print("valname:0",VALname)
+    if(VALname in LOCAL_VALTABLE.keys()):
+        # print(LOCAL_VALTABLE[VALname]['const'])
+        return LOCAL_VALTABLE[VALname]['const']
+    elif(VALname in WHOLE_VALTABLE.keys()):
+        return WHOLE_VALTABLE[VALname]['const']
+    else:
+        exit('val:'+VALname+' is not declared')
+
 class ASSIGN:
     def S(self):
         if(debug):
             print('S->',token.Name)
 
         if(token.Type=='VAL'):
+            if(judgeCONST(token.Name)):
+                exit("const val:"+token.Name+" can't change")
             idname=judgeVAL(token.Name)
             getNextToken()
             if(token.Name=='='):
@@ -396,7 +408,7 @@ class DECLARE:
             exit('declare wrong')
 
         global stack_offset
-        LOCAL_VALTABLE[idname]={'type':T_type,'width':4,'offset':str(stack_offset),'value':initVal,'reg':None}
+        LOCAL_VALTABLE[idname]={'type':T_type,'width':4,'offset':str(stack_offset),'value':initVal,'reg':None,'const':ISCONST}
         gen('push',initVal)
         stack_offset-=4
     
@@ -424,7 +436,7 @@ class DECLARE:
         else:
             exit('declare wrong')
         global offset
-        WHOLE_VALTABLE[idname]={'type':T_type,'width':4,'offset':offset,'value':initVal,'reg':None}
+        WHOLE_VALTABLE[idname]={'type':T_type,'width':4,'offset':offset,'value':initVal,'reg':None,'const':ISCONST}
         MEMTABLE[offset]=idname
         offset+=4
 
@@ -443,6 +455,10 @@ class DECLARE:
             exit('param_declare list lack (')
         getNextToken()
         while(1):
+            global ISCONST
+            if(token.Name=='const'):
+                ISCONST=True
+                getNextToken()
             if(token.Type=='TYPE'):
                 temp_type=token.Name
             elif(token.Name==')'):
@@ -452,8 +468,9 @@ class DECLARE:
                 exit('param_declare TYPE wrong')
             getNextToken()
             if(token.Type=='VAL'):
-                temp_valtable[token.Name]={'type':temp_type,'width':4,'offset':str(8+4*index),'reg':None}#ret在4($fp),第一个参数在8($fp)
+                temp_valtable[token.Name]={'type':temp_type,'width':4,'offset':str(8+4*index),'reg':None,'const':ISCONST}#ret在4($fp),第一个参数在8($fp)
                 index=index+1
+                ISCONST=False
             else:
                 exit('param_declare not VAL')
             
@@ -760,11 +777,17 @@ class PROGRAM:
 
     def whole_declare(self):#全局定义段
         while(1):
-            if(token.Name in TYPE):
+            global ISCONST
+            if(token.Name=='const'):
+                ISCONST=True
+                if(token.nextToken().Name not in TYPE):
+                    exit("const must be follow by a declare sentence")
+            elif(token.Name in TYPE):
                 if(token.nextToken().Type==FUNC_DECLARE):
                     print('whole_declare end')
                     break
                 DECLARE().WD()
+                ISCONST=False
             else:
                 exit('whole_declare wrong')
         
@@ -835,6 +858,7 @@ class PROGRAM:
 
         else:
             while(1):
+                global ISCONST
                 init_sentence()
                 if(token.Name=='return'):
                     FUNC().RETURN()
@@ -842,8 +866,14 @@ class PROGRAM:
                 elif(token.Type==FUNC_CALL):
                     FUNC().CALL()
 
+                elif(token.Name=='const'):
+                    ISCONST=True
+                    if(token.nextToken().Name not in TYPE):
+                        exit("const must be follow by a declare sentence")
+
                 elif(token.Name in TYPE):
                     DECLARE().LD()
+                    ISCONST=False
 
                 elif(token.Type=='SYSCALL'):
                     SYSTEMCALL().S()
@@ -875,14 +905,21 @@ class PROGRAM:
             LOOP().W(S_next)
 
         else:
+            global ISCONST
             if(token.Name=='return'):
                 FUNC().RETURN()
 
             elif(token.Type==FUNC_CALL):
                 FUNC().CALL()
 
+            elif(token.Name=='const'):
+                ISCONST=True
+                if(token.nextToken().Name not in TYPE):
+                    exit("const must be follow by a declare sentence")
+
             elif(token.Name in TYPE):
                 DECLARE().LD()
+                ISCONST=False
 
             elif(token.Type=='SYSCALL'):
                 SYSTEMCALL().S()
@@ -891,11 +928,11 @@ class PROGRAM:
         
 
 
-with open('test/fib.txt','r') as f:
+with open('test/c.txt','r') as f:
     s=f.read()
 getTokens(s)
-for i in tokens:
-    i.show()
+# for i in tokens:
+#     i.show()
 
 if(tokens[-1].Name!=';' and tokens[-1].Name!='}'):
     exit('expect Last BOUND')
@@ -907,4 +944,4 @@ PROGRAM().P()
 # print(WHOLE_VALTABLE)
 # print(LOCAL_VALTABLE)
 
-seg_show()
+#seg_show()

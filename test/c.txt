@@ -1,14 +1,18 @@
+const int x;
+
 int g(){
 	return 3;
 }
-int f(){
-	printf("nihao  \n");
+int f(const int a){
+	const int b;
+	b=b+1;
+	a=a+1;
 	return g();
 }
 
 void main()
 {
-	int a;
-	a=f();
+	int  a;
+	a=10;
 	printf(a);
 }
