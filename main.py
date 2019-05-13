@@ -383,62 +383,57 @@ class ASSIGN:
             exit('val:'+token.Name+' is not legal')
 
 class DECLARE:
-    def LD(self):
+    def D(self,t):
         initVal='0'
 
         T_type=self.T()
         getNextToken()
-        if(token.Type!='VAL'):
-            exit("declare:NOT VAL")
-        idname = token.Name
-        getNextToken()
-        if(token.Name==';'):
-            pass
-        elif(token.Name=='='):
+        res=[]
+        while(1):
+            if(token.Type!='VAL'):
+                exit("declare:NOT VAL")
+            idname = token.Name
             getNextToken()
-            
-            if(token.Type=='DIGIT'):
-                initVal=token.Name
+            if(token.Name=='='):#定义段的初始赋值可有可无
                 getNextToken()
-                if(token.Name!=';'):
-                    exit('expect ;')
+                
+                if(t==1):#全局变量声明的初始赋值只能是DIGIT
+                    if(token.Type=='DIGIT'):
+                        initVal=token.Name
+                        getNextToken()
+                    else:
+                        exit('whole declare assign must be digit')
+                else:#局部变量声明的初始赋值可以是表达式
+                    initVal=ASSIGN().E()
+                    getNextToken()
+                    
+            res.append((T_type,initVal,idname))
+            if(token.Name==';'):
+                break
+            elif(token.Name==','):
+                getNextToken()
             else:
                 exit('declare wrong')
-        else:
-            exit('declare wrong')
+
+        return res
+
+    def LD(self):#局部定义的后续处理
+        res=self.D(0)
 
         global stack_offset
-        LOCAL_VALTABLE[idname]={'type':T_type,'width':4,'offset':str(stack_offset),'value':initVal,'reg':None,'const':ISCONST}
-        gen('push',initVal)
-        stack_offset-=4
+        for T_type,initVal,idname in res:
+            LOCAL_VALTABLE[idname]={'type':T_type,'width':4,'offset':str(stack_offset),'value':initVal,'reg':None,'const':ISCONST}
+            gen('push',initVal)
+            stack_offset-=4
     
-    def WD(self):
-        initVal='0'
+    def WD(self):#全局定义的后续处理
+        res=self.D(1)
 
-        T_type=self.T()
-        getNextToken()
-        if(token.Type!='VAL'):
-            exit("declare:NOT VAL")
-        idname = token.Name
-        getNextToken()
-        if(token.Name==';'):
-            pass
-        elif(token.Name=='='):
-            getNextToken()
-            
-            if(token.Type=='DIGIT'):
-                initVal=token.Name
-                getNextToken()
-                if(token.Name!=';'):
-                    exit('expect ;')
-            else:
-                exit('declare wrong')
-        else:
-            exit('declare wrong')
         global offset
-        WHOLE_VALTABLE[idname]={'type':T_type,'width':4,'offset':offset,'value':initVal,'reg':None,'const':ISCONST}
-        MEMTABLE[offset]=idname
-        offset+=4
+        for T_type,initVal,idname in res:
+            WHOLE_VALTABLE[idname]={'type':T_type,'width':4,'offset':offset,'value':initVal,'reg':None,'const':ISCONST}
+            MEMTABLE[offset]=idname
+            offset+=4
 
     def T(self):
         if(token.Type=='TYPE'):
@@ -926,9 +921,9 @@ class PROGRAM:
             elif(token.Type=='VAL'):
                 ASSIGN().S()
         
-
-
-with open('test/c.txt','r') as f:
+print("please input filename:")
+file=input()
+with open('test/'+file+'.txt','r') as f:
     s=f.read()
 getTokens(s)
 # for i in tokens:
@@ -944,4 +939,4 @@ PROGRAM().P()
 # print(WHOLE_VALTABLE)
 # print(LOCAL_VALTABLE)
 
-#seg_show()
+seg_show()

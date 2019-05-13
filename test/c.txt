@@ -1,18 +1,22 @@
-const int x;
+const int x=2;
 
 int g(){
 	return 3;
 }
 int f(const int a){
-	const int b;
-	b=b+1;
-	a=a+1;
 	return g();
 }
 
 void main()
 {
-	int  a;
-	a=10;
-	printf(a);
+	int  a=5;
+	int b=a+6;
+	printf(b);
+	printf(" ");
+	int c=f(a);
+	printf(c);
+	printf(" ");
+	printf(x);
+	printf(" ");
+
 }
