@@ -40,7 +40,8 @@ class MIPS:
                         reg=self.des[t]
                         print('lw\t'+reg+','+str(t*4)+'($sp)')
                     print('addi\t$sp,$sp,'+str(4*num_reg))
-
+            elif(self.opr=='newstack'):
+                print('addi\t$sp,$sp,'+str(4*int(self.des)))
             elif(self.opr=='return'):
                 print('move\t$sp,$fp')
                 print('lw\t$fp,0($sp)')
@@ -85,7 +86,11 @@ class MIPS:
                     print('syscall')
                 else:
                     print('li\t$v0,1')
-                    print('move\t$a0,'+self.des)
+                    try:
+                        int(self.des)
+                        print('li\t$a0,'+self.des)
+                    except:
+                        print('move\t$a0,'+self.des)
                     print('syscall')
 
             elif(self.opr=='load'):#lw
@@ -159,8 +164,11 @@ def seg_show():
     print('\n'*2)
     print('.data')
     for val in WHOLE_VALTABLE.keys():
-        Type = '.word' if WHOLE_VALTABLE[val]['width']==4 else '.byte'
-        print(val+':\t'+Type+'\t'+WHOLE_VALTABLE[val]['value'])
+        if(WHOLE_VALTABLE[val]['array']):
+            print(val+':\t.space\t'+str(WHOLE_VALTABLE[val]['width']))
+        else:
+            Type = '.word' if WHOLE_VALTABLE[val]['width']==4 else '.byte'
+            print(val+':\t'+Type+'\t'+WHOLE_VALTABLE[val]['value'])
     for name in WHOLE_STRING.keys():
         print(name+':\t.ascii\t'+WHOLE_STRING[name])
     print('.text')
@@ -197,7 +205,6 @@ TYPE = ['int','void']
 WS = [' ','\n','\t']
 
 
-offset = 0
 stack_offset = -4
 
 tokens = []
@@ -205,9 +212,8 @@ token = None
 MIDCODES=[]
 
 REG_USED=set([])
-WHOLE_VALTABLE={}#全局、静态数据区 {'type':T_type,'width':4,'offset':offset,'value':initVal,'reg':None,'const':False}
+WHOLE_VALTABLE={}#全局、静态数据区 {'type':T_type,'width':4,'value':initVal,'reg':None,'const':ISCONST,'array':True}
 LOCAL_VALTABLE={}#记录局部变量在栈中的位置 LOCAL_VALTABLE[idname]={'type':T_type,'width':4,'offset':str(stack_offset),'value':initVal,'reg':None,'const':False}
-MEMTABLE={}#MEMTABLE[offset]=idname
 FUNCTABLE={}#{'param_num':None,'return_type':tokens[i-1].Name}
 NOWFUNC=None
 

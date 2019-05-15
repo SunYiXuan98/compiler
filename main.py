@@ -164,6 +164,11 @@ def getTokens(s):
                 else:
                     token = TOKEN(res,'VAL')
                 s=s[i:]
+                try:
+                    if(s[0]=='['):
+                        token.Type='ARRAY'
+                except:
+                    pass
                 tokens.append(token)
             
             elif ch=='"':
@@ -271,13 +276,25 @@ class ASSIGN:
     def E(self):
         if(debug):
             print('E->',token.Name)
-
+        neg=0
+        if(token.Name in ADDOPR):#有符号
+            
+            if(token.Name=='-'):
+                neg=1
+            getNextToken()
         T_reg=self.T()
         #gen('=',E1_reg,T_reg,None)
         E1_val=T_reg
         getNextToken()
         E1_reg=self.E1(E1_val)
         E_reg=E1_reg
+        
+        if(neg):
+            try:#如果是整数，直接取负
+                int(E_reg)
+                E_reg='-'+E_reg
+            except:#否则生成取负指令
+                gen('-',E_reg,'$zero',E_reg)
 
         return E_reg
 
@@ -385,16 +402,28 @@ class ASSIGN:
 class DECLARE:
     def D(self,t):
         initVal='0'
+        
 
         T_type=self.T()
         getNextToken()
         res=[]
         while(1):
-            if(token.Type!='VAL'):
-                exit("declare:NOT VAL")
+            isArray=0
+            if(token.Type!='VAL' and token.Type!='ARRAY'):
+                exit("declare:not val or array")
             idname = token.Name
             getNextToken()
-            if(token.Name=='='):#定义段的初始赋值可有可无
+            if(token.Name=='['):#数组的定义,数组不能初始化
+                getNextToken()
+                if(token.Type!='DIGIT' and token.Name!='0'):
+                    exit("array declare:size of array must be a digit")
+                arraySize=int(token.Name)
+                getNextToken()
+                if(token.Name!=']'):
+                    exit("array declare:expect ]")
+                getNextToken()
+                isArray=1
+            elif(token.Name=='='):#定义段的初始赋值可有可无
                 getNextToken()
                 
                 if(t==1):#全局变量声明的初始赋值只能是DIGIT
@@ -406,8 +435,11 @@ class DECLARE:
                 else:#局部变量声明的初始赋值可以是表达式
                     initVal=ASSIGN().E()
                     getNextToken()
-                    
-            res.append((T_type,initVal,idname))
+            if(isArray):
+                res.append((T_type,initVal,idname,arraySize))  
+            else:    
+                res.append((T_type,initVal,idname,0))
+            
             if(token.Name==';'):
                 break
             elif(token.Name==','):
@@ -421,19 +453,30 @@ class DECLARE:
         res=self.D(0)
 
         global stack_offset
-        for T_type,initVal,idname in res:
-            LOCAL_VALTABLE[idname]={'type':T_type,'width':4,'offset':str(stack_offset),'value':initVal,'reg':None,'const':ISCONST}
-            gen('push',initVal)
-            stack_offset-=4
+        for T_type,initVal,idname,arraySize in res:
+            if(idname in LOCAL_VALTABLE.keys()):
+                exit("declare:"+idname+" has been already declared")
+            if(arraySize):#如果是数组
+                LOCAL_VALTABLE[idname]={'type':T_type,'width':4*arraySize,'offset':str(stack_offset),'value':None,'reg':None,'const':ISCONST,'array':True}
+                gen('newstack',arraySize)
+                stack_offset-=4*arraySize
+            else:
+                LOCAL_VALTABLE[idname]={'type':T_type,'width':4,'offset':str(stack_offset),'value':initVal,'reg':None,'const':ISCONST,'array':False}
+                gen('push',initVal)
+                stack_offset-=4
     
     def WD(self):#全局定义的后续处理
         res=self.D(1)
 
-        global offset
-        for T_type,initVal,idname in res:
-            WHOLE_VALTABLE[idname]={'type':T_type,'width':4,'offset':offset,'value':initVal,'reg':None,'const':ISCONST}
-            MEMTABLE[offset]=idname
-            offset+=4
+        for T_type,initVal,idname,arraySize in res:
+            if(idname in WHOLE_VALTABLE.keys()):
+                exit("declare:"+idname+" has been already declared")
+            if(arraySize):#如果是数组
+                WHOLE_VALTABLE[idname]={'type':T_type,'width':4*arraySize,'value':initVal,'reg':None,'const':ISCONST,'array':True}
+            else:
+                WHOLE_VALTABLE[idname]={'type':T_type,'width':4,'value':None,'reg':None,'const':ISCONST,'array':False}
+        
+            
 
     def T(self):
         if(token.Type=='TYPE'):
@@ -926,8 +969,8 @@ file=input()
 with open('test/'+file+'.txt','r') as f:
     s=f.read()
 getTokens(s)
-# for i in tokens:
-#     i.show()
+for i in tokens:
+    i.show()
 
 if(tokens[-1].Name!=';' and tokens[-1].Name!='}'):
     exit('expect Last BOUND')

@@ -1,22 +1,5 @@
-const int x=2;
-
-int g(){
-	return 3;
-}
-int f(const int a){
-	return g();
-}
-
+int b[50];
 void main()
 {
-	int  a=5;
-	int b=a+6;
-	printf(b);
-	printf(" ");
-	int c=f(a);
-	printf(c);
-	printf(" ");
-	printf(x);
-	printf(" ");
-
+	int a[60];
 }
