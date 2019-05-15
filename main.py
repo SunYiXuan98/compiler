@@ -164,11 +164,6 @@ def getTokens(s):
                 else:
                     token = TOKEN(res,'VAL')
                 s=s[i:]
-                try:
-                    if(s[0]=='['):
-                        token.Type='ARRAY'
-                except:
-                    pass
                 tokens.append(token)
             
             elif ch=='"':
@@ -230,11 +225,23 @@ def gen(opr,des,sou1=None,sou2=None):
         print((opr,des,sou1,sou2))
         MIDCODES.append((opr,des,sou1,sou2))
 
-def judgeVAL(idname):
+def judgeVAL(idname,index_reg=0):
     if(idname in LOCAL_VALTABLE.keys()):
-        return LOCAL_VALTABLE[idname]['offset']+'($fp)'
+        if(LOCAL_VALTABLE[idname]['array']):
+            base=LOCAL_VALTABLE[idname]['offset']+'($fp)'
+            t1reg=getRegt(1)
+            gen('arraylocal',t1reg,base,index_reg)
+            return t1reg
+        else:
+            return LOCAL_VALTABLE[idname]['offset']+'($fp)'
     elif(idname in WHOLE_VALTABLE.keys()):
-        return idname
+        if(WHOLE_VALTABLE[idname]['array']):
+            base=idname
+            t1reg=getRegt(1)
+            gen('arraywhole',t1reg,base,index_reg)
+            return t1reg
+        else:
+            return idname
     else:
         exit('val:'+idname+' is not declared')
 
@@ -256,7 +263,14 @@ class ASSIGN:
         if(token.Type=='VAL'):
             if(judgeCONST(token.Name)):
                 exit("const val:"+token.Name+" can't change")
-            idname=judgeVAL(token.Name)
+
+            if(token.nextToken().Name!='['):#如果是变量
+                idname=judgeVAL(token.Name)
+                
+            else:#如果是数组
+                address_reg=self.A()
+                idname='0('+address_reg+')'
+                
             getNextToken()
             if(token.Name=='='):
                 getNextToken()
@@ -372,6 +386,23 @@ class ASSIGN:
             REG_USED.add(temp_reg)
             
             return temp_reg
+        elif(token.Type=="VAL" and token.nextToken().Name=='['):#数组
+            idname=token.Name
+            address_reg=ASSIGN().A()
+            address='0('+address_reg+')'
+
+            temp_reg=getRegt(1)
+            gen('load',temp_reg,address,None)
+            REG_USED.add(temp_reg)
+
+            if(idname in LOCAL_VALTABLE.keys()):#如果是局部变量
+                LOCAL_VALTABLE[idname]['reg']=temp_reg
+            else:
+                WHOLE_VALTABLE[idname]['reg']=temp_reg
+                
+
+            return temp_reg
+
         elif(token.Type=="VAL"):
             idname=judgeVAL(token.Name)
             temp_reg=getRegt(1)
@@ -398,6 +429,23 @@ class ASSIGN:
                 exit('expect )')
         else:
             exit('val:'+token.Name+' is not legal')
+    
+    def A(self):
+        arrayname=token.Name
+
+        getNextToken()
+        if(token.Name!='['):
+            exit("array:"+arrayname+"expect [")
+
+        getNextToken()
+        E_reg=self.E()
+
+        getNextToken()
+        if(token.Name!=']'):
+            exit("array:"+arrayname+"expect ]")
+                
+        addres_reg=judgeVAL(arrayname,E_reg)
+        return addres_reg
 
 class DECLARE:
     def D(self,t):
@@ -409,7 +457,7 @@ class DECLARE:
         res=[]
         while(1):
             isArray=0
-            if(token.Type!='VAL' and token.Type!='ARRAY'):
+            if(token.Type!='VAL'):
                 exit("declare:not val or array")
             idname = token.Name
             getNextToken()
@@ -472,9 +520,9 @@ class DECLARE:
             if(idname in WHOLE_VALTABLE.keys()):
                 exit("declare:"+idname+" has been already declared")
             if(arraySize):#如果是数组
-                WHOLE_VALTABLE[idname]={'type':T_type,'width':4*arraySize,'value':initVal,'reg':None,'const':ISCONST,'array':True}
+                WHOLE_VALTABLE[idname]={'type':T_type,'width':4*arraySize,'value':None,'reg':None,'const':ISCONST,'array':True}
             else:
-                WHOLE_VALTABLE[idname]={'type':T_type,'width':4,'value':None,'reg':None,'const':ISCONST,'array':False}
+                WHOLE_VALTABLE[idname]={'type':T_type,'width':4,'value':initVal,'reg':None,'const':ISCONST,'array':False}
         
             
 

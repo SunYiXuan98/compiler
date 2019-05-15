@@ -41,7 +41,7 @@ class MIPS:
                         print('lw\t'+reg+','+str(t*4)+'($sp)')
                     print('addi\t$sp,$sp,'+str(4*num_reg))
             elif(self.opr=='newstack'):
-                print('addi\t$sp,$sp,'+str(4*int(self.des)))
+                print('addi\t$sp,$sp,'+str(-4*int(self.des)))
             elif(self.opr=='return'):
                 print('move\t$sp,$fp')
                 print('lw\t$fp,0($sp)')
@@ -126,20 +126,13 @@ class MIPS:
                     print('sub\t'+self.des+','+self.r1+','+self.r2)
             
             else:
-                try:
-                    int(self.r2)
-                    print('li\t$s2,'+self.r2)
-                    self.r2='$s2'
-                except:
-                    pass
+                
 
                 if(self.opr=='*'):#mult
-                    print('mult\t'+self.r1+','+self.r2)
-                    print('mflo\t'+self.des)
+                    print('mul\t'+self.des,self.r1+','+self.r2)
                     
                 elif(self.opr=='/'):#div
-                    print('div\t'+self.r1+','+self.r2)
-                    print('mflo\t'+self.des)
+                    print('div\t'+self.des,self.r1+','+self.r2)
                 
                 elif(self.opr=='=='):#beq
                     print('beq\t'+self.r1+','+self.r2+','+self.des)
@@ -158,7 +151,26 @@ class MIPS:
                 
                 elif(self.opr=='<'):#blt
                     print('blt\t'+self.r1+','+self.r2+','+self.des)
-
+                
+                elif(self.opr=='arraylocal'):
+                    print("la\t"+self.des+','+self.r1)
+                    try:
+                        int(self.r2)
+                        self.r2=str(int(self.r2)*4)
+                    except:
+                        print('mul\t'+self.r2+','+self.r2+',4')
+                    
+                    print('sub\t'+self.des+','+self.des+','+self.r2)
+                
+                elif(self.opr=='arraywhole'):
+                    print("la\t"+self.des+','+self.r1)
+                    try:
+                        int(self.r2)
+                        self.r2=str(int(self.r2)*4)
+                    except:
+                        print('mul\t'+self.r2+','+self.r2+',4')
+                    
+                    print('add\t'+self.des+','+self.des+','+self.r2)
 
 def seg_show():
     print('\n'*2)
@@ -170,7 +182,7 @@ def seg_show():
             Type = '.word' if WHOLE_VALTABLE[val]['width']==4 else '.byte'
             print(val+':\t'+Type+'\t'+WHOLE_VALTABLE[val]['value'])
     for name in WHOLE_STRING.keys():
-        print(name+':\t.ascii\t'+WHOLE_STRING[name])
+        print(name+':\t.asciiz\t'+WHOLE_STRING[name])
     print('.text')
     print('j\tmain')
     for four in MIDCODES:
