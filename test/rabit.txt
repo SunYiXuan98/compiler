@@ -6,8 +6,10 @@ void main()
 		j = 88 - i;
 		if(2 * i + 4 * j == 244)
 		{
-			printf("chicken = ", i);
-			printf("rabit = ", j);
+			printf("chicken = ");
+			printf(i);
+			printf("rabit = ");
+			printf(j);
 		}
 	}
 }

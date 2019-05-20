@@ -1,15 +1,36 @@
-int b[20];
+int mod(int a, int b)
+{
+	while(a >= b)
+	{	
+		a = a - b;
+	}
+	return(a);
+}
+
+void factorize(int n)
+{
+	int p;
+	int flag;
+	
+		while(mod(n, p) == 0)
+		{
+			if(flag)
+			{
+				printf(p);
+				flag = 0;
+			}
+			else{
+				printf("*");
+				printf(p);
+			} 
+			n = n / p;
+		}
+
+}
+
 void main()
 {
-	int i=0;
-	while(i<20){
-		if(i==0) b[i]=1;
-		else if(i==1) b[i]=1;
-		else b[i]=b[i-1]+b[i-2];
-		
-		printf(b[i]);
-		printf(" ");
-		i=i+1;
-	}
-
+	int n;
+	scanf(n);
+	factorize(n);
 }

@@ -121,7 +121,11 @@ def tokenBack():
     point_token-=1
 
 def getTokens(s):
-    words=[]#词法的预处理
+    #for语句转化为while语句
+    s=LOOP().for2while(s)
+
+    #空格的预处理
+    words=[]
     while(1):
         r=getMarks(s)
         if(len(r)==0):
@@ -133,6 +137,7 @@ def getTokens(s):
         s=s[y+1:]
     words+=s.split()
 
+    #词法分析
     for s in words:
         while(len(s)):
             ch=s[0]
@@ -460,6 +465,15 @@ class DECLARE:
             if(token.Type!='VAL'):
                 exit("declare:not val or array")
             idname = token.Name
+
+            #全局重复定义不允许
+            if(idname in WHOLE_VALTABLE.keys()):
+                exit("idname already declared")
+            #局部重复定义看成赋值
+            if(idname in LOCAL_VALTABLE.keys()):
+                ASSIGN().S()
+                return []
+            
             getNextToken()
             if(token.Name=='['):#数组的定义,数组不能初始化
                 getNextToken()
@@ -554,7 +568,7 @@ class DECLARE:
                 exit('param_declare TYPE wrong')
             getNextToken()
             if(token.Type=='VAL'):
-                temp_valtable[token.Name]={'type':temp_type,'width':4,'offset':str(8+4*index),'reg':None,'const':ISCONST}#ret在4($fp),第一个参数在8($fp)
+                temp_valtable[token.Name]={'type':temp_type,'width':4,'offset':str(8+4*index),'reg':None,'const':ISCONST,'array':False}#ret在4($fp),第一个参数在8($fp)
                 index=index+1
                 ISCONST=False
             else:
@@ -681,6 +695,7 @@ class IF:
 
         getNextToken()
 
+        print(token.Name)
         if(token.Name in COMPOPR):
             cmp=token.Name
         else:
@@ -758,6 +773,55 @@ class LOOP:
         getNextToken()
         if(token.Name!='}'):
             exit('if:expect }')
+    
+    def for2while(self,s):
+        def delete(s,start,end):
+            return s[:start]+s[end+1:],s[start:end+1]
+
+        def insert(s,start,s1):
+            return s[:start]+s1+s[start:]
+
+        while(1):
+            start=s.find('for')
+            if(start==-1):
+                break
+            end=start
+            c=0
+            while(1):
+                if(s[end]=='{'):
+                    c+=1
+                if(s[end]=='}'):
+                    c-=1
+                    if(c==0):
+                        break
+                end+=1
+
+            s,s_for=delete(s,start,end)
+
+            init_start=4
+            init_end=s_for.find(";")
+
+            s_for,s_init=delete(s_for,init_start,init_end)
+
+
+            bool_start=4
+            bool_end=s_for.find(";")
+            s_for,s_bool=delete(s_for,bool_start,bool_end)
+            s_bool=s_bool[:-1]
+
+            last_start=4
+            last_end=s_for.find(")")-1
+            s_for,s_last=delete(s_for,last_start,last_end)
+            s_last+=';'
+
+            s_for=insert(s_for,4,s_bool)
+            s_for=insert(s_for,len(s_for)-1,s_last)
+            s_for=s_for.replace('for','while',1)
+            s_for=s_init+s_for
+            s=insert(s,start,s_for)
+        
+        return s
+
 
 class FUNC:
     def CALL(self):#解析调用
@@ -966,6 +1030,7 @@ class PROGRAM:
 
                 elif(token.Type=='VAL'):
                     ASSIGN().S()
+
                 if(point_token<len(tokens)):
                     getNextToken()
                     if(token.Name in ['}','if','while','return']):

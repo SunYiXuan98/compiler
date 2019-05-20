@@ -18,24 +18,30 @@ void factorize(int n)
 	{
 		while(mod(n, p) == 0)
 		{
-			if(flag)
+			if(flag!=0)
 			{
 				printf(p);
 				flag = 0;
 			}
-			else printf("*", p);
+			else{
+				printf("*");
+				printf(p);
+			} 
 			n = n / p;
 		}
 		p = p + 1;
 	}
 	if(n != 1)
 	{
-		if(flag)
+		if(flag!=0)
 		{
 			printf(n);
 			flag = 0;
 		}
-		else printf("*", n);
+		else{
+			printf("*");
+			printf(n);
+		} 
 	}
 }
 
