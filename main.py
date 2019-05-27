@@ -1,6 +1,6 @@
 # coding=utf-8
 from define import *
-from tool import *
+from mips import *
 import re
 import sys
 import os
@@ -881,8 +881,6 @@ class FUNC:
                 exit('void func return int')
 
         
-    
-
 class PROGRAM:
     def P(self):
         self.whole_declare()
