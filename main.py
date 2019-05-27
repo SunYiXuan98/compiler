@@ -70,8 +70,7 @@ def init_func():
 
 def func_head(func_name):
     gen('label',func_name)
-    gen('push','$ra')
-    gen('push','$fp')
+    gen('protect',['$ra','$fp'])
     gen('=','$fp','$sp')
     
 
@@ -1090,17 +1089,13 @@ file=input()
 with open('test/'+file+'.txt','r') as f:
     s=f.read()
 getTokens(s)
-for i in tokens:
-    i.show()
+# for i in tokens:
+#     i.show()
 
 if(tokens[-1].Name!=';' and tokens[-1].Name!='}'):
     exit('expect Last BOUND')
 getNextToken()
 
 PROGRAM().P()
-
-
-# print(WHOLE_VALTABLE)
-# print(LOCAL_VALTABLE)
 
 seg_show()

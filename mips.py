@@ -2,6 +2,7 @@
 # 中间代码与MIPS汇编的转换
 
 from define import *
+from optimize import *
 
 class MIPS:
     def __init__(self,opr,des,r1=None,r2=None):
@@ -126,13 +127,17 @@ class MIPS:
                     print('sub\t'+self.des+','+self.r1+','+self.r2)
             
             else:
-                
-
-                if(self.opr=='*'):#mult
+                if(self.opr=='*'):#mul
                     print('mul\t'+self.des,self.r1+','+self.r2)
                     
                 elif(self.opr=='/'):#div
                     print('div\t'+self.des,self.r1+','+self.r2)
+                
+                elif(self.opr=='<<'):#sll
+                    print('sll\t'+self.des,self.r1+','+self.r2)
+
+                elif(self.opr=='>>'):#sra
+                    print('sra\t'+self.des,self.r1+','+self.r2)
                 
                 elif(self.opr=='=='):#beq
                     print('beq\t'+self.r1+','+self.r2+','+self.des)
@@ -173,6 +178,11 @@ class MIPS:
                     print('add\t'+self.des+','+self.des+','+self.r2)
 
 def seg_show():
+    window_optimize()#窥孔优化
+    print('窥孔优化后:')
+    for i in MIDCODES:
+        print(i)
+    
     print('\n'*2)
     print('.data')
     for val in WHOLE_VALTABLE.keys():
@@ -185,6 +195,8 @@ def seg_show():
         print(name+':\t.asciiz\t'+WHOLE_STRING[name])
     print('.text')
     print('j\tmain')
+
+    
     for four in MIDCODES:
         mips_code = Tran2Mips(four)
         mips_code.show()
