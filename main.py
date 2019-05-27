@@ -466,13 +466,13 @@ class DECLARE:
                 exit("declare:not val or array")
             idname = token.Name
 
-            #全局重复定义不允许
-            if(idname in WHOLE_VALTABLE.keys()):
-                exit("idname already declared")
-            #局部重复定义看成赋值
-            if(idname in LOCAL_VALTABLE.keys()):
-                ASSIGN().S()
-                return []
+            #重复定义不允许
+            if(idname in WHOLE_VALTABLE.keys() or idname in LOCAL_VALTABLE.keys()):
+                exit("val:"+idname+" already declared")
+
+            if(ISBRANCH):
+                exit("declare val:"+idname+" can't declare in branch")
+            
             
             getNextToken()
             if(token.Name=='['):#数组的定义,数组不能初始化
@@ -993,16 +993,21 @@ class PROGRAM:
             print('S->',token.Name)
         init_sentence()
 
+        global ISBRANCH
         if(token.Name=='if'):
+            ISBRANCH=True
             i = IF()
             if(i.isHaveElse()):
                 i.S_else(S_next)
             else:
                 i.S(S_next)
+            ISBRANCH=False
 
         
         elif(token.Name=='while'):
+            ISBRANCH=True
             LOOP().W(S_next)
+            ISBRANCH=False
 
         else:
             while(1):
@@ -1042,16 +1047,21 @@ class PROGRAM:
             print('S->',token.Name)
         init_sentence()
 
+        global ISBRANCH
         if(token.Name=='if'):
+            ISBRANCH=True
             i = IF()
             if(i.isHaveElse()):
                 i.S_else(S_next)
             else:
                 i.S(S_next)
+            ISBRANCH=False
 
         
         elif(token.Name=='while'):
+            ISBRANCH=True
             LOOP().W(S_next)
+            ISBRANCH=False
 
         else:
             global ISCONST
@@ -1074,7 +1084,7 @@ class PROGRAM:
                 SYSTEMCALL().S()
             elif(token.Type=='VAL'):
                 ASSIGN().S()
-        aaaaaaaaaaaa
+        
 print("please input filename:")
 file=input()
 with open('test/'+file+'.txt','r') as f:
