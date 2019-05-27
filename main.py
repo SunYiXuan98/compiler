@@ -1074,7 +1074,7 @@ class PROGRAM:
                 SYSTEMCALL().S()
             elif(token.Type=='VAL'):
                 ASSIGN().S()
-        
+        aaaaaaaaaaaa
 print("please input filename:")
 file=input()
 with open('test/'+file+'.txt','r') as f:
