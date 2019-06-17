@@ -138,7 +138,7 @@ class TOKEN:
             except:
                 pass
                    
-#################################功能模块##################################
+#################################功能函数##################################
 #每一个语句初始化寄存器状态
 def init_sentence():
     global point_t
@@ -1115,12 +1115,14 @@ if __name__=="__main__":
     file=input()
     with open('test/'+file+'.txt','r') as f:
         s=f.read()
+    #根据输入获取tokens序列
     TOKEN().getTokens(s)
-
     if(tokens[-1].Name!=';' and tokens[-1].Name!='}'):
         exit('expect Last BOUND')
     TOKEN().getNextToken()
 
+    #由总程序模块起始得到中间代码
     PROGRAM().P()
 
+    #中间代码转为MIPS汇编并输出到res文件夹中
     seg_show(file)
