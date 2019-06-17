@@ -12,6 +12,8 @@ point_t=0
 point_s=0
 point_label=0
 point_string=0
+
+#################################词法模块##################################
 class TOKEN:
     def __init__(self,Name=None,Type=None):
         self.Name = Name
@@ -53,9 +55,93 @@ class TOKEN:
     def preToken(self):
         return tokens[point_token-2]
 
+    #得到下一个token
+    def getNextToken(self):
+        global point_token,token
+        token = tokens[point_token]
+        point_token+=1
+
+    #token回退为前一个
+    def tokenBack(self):
+        global point_token
+        point_token-=1
+
+    #得到tokens序列
+    def getTokens(self,s):
+        #for语句转化为while语句
+        s=LOOP().for2while(s)
+
+        #空格的预处理
+        words=[]
+        while(1):
+            r=getMarks(s)
+            if(len(r)==0):
+                break
+            x=r[0]
+            y=r[1]
+            words+=s[:x].split()
+            words.append(s[x:y+1])
+            s=s[y+1:]
+        words+=s.split()
+
+        #词法分析
+        for s in words:
+            while(len(s)):
+                ch=s[0]
+                if ch == ' ':
+                    s=s[1:]
+                
+                elif ch in OPR:
+                    res,i = self.to_opr(s)
+                    token = TOKEN(res,'OPR')
+                    tokens.append(token)
+                    s=s[i:]
+                elif ch in BOUND:
+                    token = TOKEN(ch,'BOUND')
+                    tokens.append(token)
+                    s=s[1:]
+                elif ch.isdigit():
+                    res,i = self.to_int(s)
+                    token = TOKEN(res,'DIGIT')
+                    s = s[i:]
+                    tokens.append(token)
+                elif ch.isalpha():
+                    res,i = self.to_val(s)
+                    if(res in KEY):
+                        token = TOKEN(res,'KEY')
+                    elif(res in FUNCTION):
+                        token = TOKEN(res,'SYSCALL')
+                    elif(res in TYPE):
+                        token = TOKEN(res,'TYPE')
+                    else:
+                        token = TOKEN(res,'VAL')
+                    s=s[i:]
+                    tokens.append(token)
+                
+                elif ch=='"':
+                    res,i = self.to_string(s)
+                    token = TOKEN(res,'STRING')
+                    s=s[i:]
+                    tokens.append(token)
+                else:
+                    for i in tokens:
+                        i.show()
+                    exit(ch+' is not legal')
+        
+        for i,t in enumerate(tokens):#处理函数名
+            if(t.Name in FUNCTABLE.keys()):
+                t.Type=FUNC_CALL
+            try:
+                if(t.Type=='VAL' and tokens[i+1].Name=='(' and tokens[i-1].Type=='TYPE'):
+                    t.Type=FUNC_DECLARE
+                    FUNCTABLE[t.Name]={'param_num':None,'return_type':tokens[i-1].Name}#返回类型在这里处理了
+            except:
+                pass
+                   
+#################################功能模块##################################
+#每一个语句初始化寄存器状态
 def init_sentence():
     global point_t
-    point_r=0
     point_t=0
     for attr in WHOLE_VALTABLE.values():
         attr['reg']=None
@@ -63,33 +149,37 @@ def init_sentence():
         attr['reg']=None
     REG_USED.clear()
 
+#函数调用时初始化局部符号表以及堆栈偏移
 def init_func():
     LOCAL_VALTABLE.clear()
     global stack_offset
     stack_offset = -4
 
+#函数调用头部
 def func_head(func_name):
     gen('label',func_name)
     gen('protect',['$ra','$fp'])
     gen('=','$fp','$sp')
     
-
+#函数调用尾部
 def func_end():
     gen('return',None)
     
-
+#插入新标签
 def newLable():
     global point_label
     lable = 'L'+str(point_label)
     point_label+=1
     return lable
 
+#申请新的string名
 def newStringName():
     global point_string
     name = 'string'+str(point_string)
     point_string+=1
     return name
 
+#申请新的寄存器
 def getRegt(n):
     global point_t
     if(n==-1):
@@ -106,6 +196,7 @@ def getRegt(n):
 
     return reg
 
+#空格预处理时所需的函数
 def getMarks(s):
     res=[]
     for ind,ch in enumerate(s):
@@ -115,86 +206,8 @@ def getMarks(s):
         exit("lack \"")
     return res[:2]
 
-def tokenBack():
-    global point_token
-    point_token-=1
 
-def getTokens(s):
-    #for语句转化为while语句
-    s=LOOP().for2while(s)
-
-    #空格的预处理
-    words=[]
-    while(1):
-        r=getMarks(s)
-        if(len(r)==0):
-            break
-        x=r[0]
-        y=r[1]
-        words+=s[:x].split()
-        words.append(s[x:y+1])
-        s=s[y+1:]
-    words+=s.split()
-
-    #词法分析
-    for s in words:
-        while(len(s)):
-            ch=s[0]
-            if ch == ' ':
-                s=s[1:]
-            
-            elif ch in OPR:
-                res,i = TOKEN().to_opr(s)
-                token = TOKEN(res,'OPR')
-                tokens.append(token)
-                s=s[i:]
-            elif ch in BOUND:
-                token = TOKEN(ch,'BOUND')
-                tokens.append(token)
-                s=s[1:]
-            elif ch.isdigit():
-                res,i = TOKEN().to_int(s)
-                token = TOKEN(res,'DIGIT')
-                s = s[i:]
-                tokens.append(token)
-            elif ch.isalpha():
-                res,i = TOKEN().to_val(s)
-                if(res in KEY):
-                    token = TOKEN(res,'KEY')
-                elif(res in FUNCTION):
-                    token = TOKEN(res,'SYSCALL')
-                elif(res in TYPE):
-                    token = TOKEN(res,'TYPE')
-                else:
-                    token = TOKEN(res,'VAL')
-                s=s[i:]
-                tokens.append(token)
-            
-            elif ch=='"':
-                res,i = TOKEN().to_string(s)
-                token = TOKEN(res,'STRING')
-                s=s[i:]
-                tokens.append(token)
-            else:
-                for i in tokens:
-                    i.show()
-                exit(ch+' is not legal')
-    
-    for i,t in enumerate(tokens):#处理函数名
-        if(t.Name in FUNCTABLE.keys()):
-            t.Type=FUNC_CALL
-        try:
-            if(t.Type=='VAL' and tokens[i+1].Name=='(' and tokens[i-1].Type=='TYPE'):
-                t.Type=FUNC_DECLARE
-                FUNCTABLE[t.Name]={'param_num':None,'return_type':tokens[i-1].Name}#返回类型在这里处理了
-        except:
-            pass
-                   
-def getNextToken():
-    global point_token,token
-    token = tokens[point_token]
-    point_token+=1
-
+#变量名转寄存器号
 def exchange2reg(id):
     if(id in LOCAL_VALTABLE.keys()):
         id = LOCAL_VALTABLE[id]['reg']
@@ -202,6 +215,7 @@ def exchange2reg(id):
         id = WHOLE_VALTABLE[id]['reg']
     return id
     
+#生成中间代码
 def gen(opr,des,sou1=None,sou2=None):
     if(opr == 'label'):
         try:
@@ -229,7 +243,9 @@ def gen(opr,des,sou1=None,sou2=None):
         print((opr,des,sou1,sou2))
         MIDCODES.append((opr,des,sou1,sou2))
 
+#判断变量是否处于符号表中
 def judgeVAL(idname,index_reg=0):
+    #局部符号表
     if(idname in LOCAL_VALTABLE.keys()):
         if(LOCAL_VALTABLE[idname]['array']):
             base=LOCAL_VALTABLE[idname]['offset']+'($fp)'
@@ -238,6 +254,7 @@ def judgeVAL(idname,index_reg=0):
             return t1reg
         else:
             return LOCAL_VALTABLE[idname]['offset']+'($fp)'
+    #全局符号表
     elif(idname in WHOLE_VALTABLE.keys()):
         if(WHOLE_VALTABLE[idname]['array']):
             base=idname
@@ -249,17 +266,20 @@ def judgeVAL(idname,index_reg=0):
     else:
         exit('val:'+idname+' is not declared')
 
+#判断是否为const变量
 def judgeCONST(VALname):
     # print("valname:0",VALname)
     if(VALname in LOCAL_VALTABLE.keys()):
-        # print(LOCAL_VALTABLE[VALname]['const'])
         return LOCAL_VALTABLE[VALname]['const']
     elif(VALname in WHOLE_VALTABLE.keys()):
         return WHOLE_VALTABLE[VALname]['const']
     else:
         exit('val:'+VALname+' is not declared')
 
+#################################文法模块##################################
+#赋值语句以及表达式模块
 class ASSIGN:
+    #赋值语句入口
     def S(self):
         if(debug):
             print('S->',token.Name)
@@ -275,9 +295,9 @@ class ASSIGN:
                 address_reg=self.A()
                 idname='0('+address_reg+')'
                 
-            getNextToken()
+            TOKEN().getNextToken()
             if(token.Name=='='):
-                getNextToken()
+                TOKEN().getNextToken()
                 E_reg=self.E()
                 gen('store',E_reg,idname,None)
             else:
@@ -285,12 +305,13 @@ class ASSIGN:
         else:
             exit("ERROR:ASSGIN.S")
         
-        getNextToken()
+        TOKEN().getNextToken()
         if(token.Name==';'):
             pass
         else:
             exit("ERROR:ASSGIN.S")
 
+    #表达式入口
     def E(self):
         if(debug):
             print('E->',token.Name)
@@ -299,11 +320,10 @@ class ASSIGN:
             
             if(token.Name=='-'):
                 neg=1
-            getNextToken()
+            TOKEN().getNextToken()
         T_reg=self.T()
-        #gen('=',E1_reg,T_reg,None)
         E1_val=T_reg
-        getNextToken()
+        TOKEN().getNextToken()
         E1_reg=self.E1(E1_val)
         E_reg=E1_reg
         
@@ -316,13 +336,14 @@ class ASSIGN:
 
         return E_reg
 
+    #以下请参照表达式文法
     def E1(self,E1_val):
         if(debug):
             print('E1->',token.Name)
 
         if(token.Name in ADDOPR):
             opr = token.Name
-            getNextToken()
+            TOKEN().getNextToken()
             T_reg=self.T()
 
             E2_val=T_reg
@@ -331,14 +352,14 @@ class ASSIGN:
             
             E2_val=E2_reg
 
-            getNextToken()
+            TOKEN().getNextToken()
             E2_reg=self.E1(E2_val)
             E1_reg=E2_reg
 
             return E1_reg
         else:
             E1_reg = E1_val
-            tokenBack()
+            TOKEN().tokenBack()
             return E1_reg
 
     def T(self):
@@ -347,7 +368,7 @@ class ASSIGN:
 
         Fval=self.F()
         #T1_reg = Fval
-        getNextToken()
+        TOKEN().getNextToken()
         T1_val=Fval
         T1_reg=self.T1(T1_val)  
         T_reg=T1_reg
@@ -361,7 +382,7 @@ class ASSIGN:
 
         if(token.Name in MULOPR):
             opr = token.Name
-            getNextToken()
+            TOKEN().getNextToken()
             Fval=self.F()
             
             T2_reg = getRegt(-1)
@@ -369,13 +390,13 @@ class ASSIGN:
             
             T2_val=T2_reg
 
-            getNextToken()
+            TOKEN().getNextToken()
             T2_reg=self.T1(T2_val)
             T1_reg=T2_reg
             return T1_reg
         else:
             T1_reg = T1_val
-            tokenBack()
+            TOKEN().tokenBack()
             return T1_reg
 
     def F(self):
@@ -423,10 +444,10 @@ class ASSIGN:
             Fval = token.Name
             return Fval
         elif(token.Name=='('):
-            getNextToken()
+            TOKEN().getNextToken()
             E_reg = self.E()
             F_val = E_reg
-            getNextToken()
+            TOKEN().getNextToken()
             if(token.Name==')'):
                 return F_val
             else:
@@ -437,27 +458,28 @@ class ASSIGN:
     def A(self):
         arrayname=token.Name
 
-        getNextToken()
+        TOKEN().getNextToken()
         if(token.Name!='['):
             exit("array:"+arrayname+"expect [")
 
-        getNextToken()
+        TOKEN().getNextToken()
         E_reg=self.E()
 
-        getNextToken()
+        TOKEN().getNextToken()
         if(token.Name!=']'):
             exit("array:"+arrayname+"expect ]")
                 
         addres_reg=judgeVAL(arrayname,E_reg)
         return addres_reg
 
+#定义语句模块
 class DECLARE:
     def D(self,t):
         initVal='0'
         
 
         T_type=self.T()
-        getNextToken()
+        TOKEN().getNextToken()
         res=[]
         while(1):
             isArray=0
@@ -473,29 +495,29 @@ class DECLARE:
                 exit("declare val:"+idname+" can't declare in branch")
             
             
-            getNextToken()
+            TOKEN().getNextToken()
             if(token.Name=='['):#数组的定义,数组不能初始化
-                getNextToken()
+                TOKEN().getNextToken()
                 if(token.Type!='DIGIT' and token.Name!='0'):
                     exit("array declare:size of array must be a digit")
                 arraySize=int(token.Name)
-                getNextToken()
+                TOKEN().getNextToken()
                 if(token.Name!=']'):
                     exit("array declare:expect ]")
-                getNextToken()
+                TOKEN().getNextToken()
                 isArray=1
             elif(token.Name=='='):#定义段的初始赋值可有可无
-                getNextToken()
+                TOKEN().getNextToken()
                 
                 if(t==1):#全局变量声明的初始赋值只能是DIGIT
                     if(token.Type=='DIGIT'):
                         initVal=token.Name
-                        getNextToken()
+                        TOKEN().getNextToken()
                     else:
                         exit('whole declare assign must be digit')
                 else:#局部变量声明的初始赋值可以是表达式
                     initVal=ASSIGN().E()
-                    getNextToken()
+                    TOKEN().getNextToken()
             if(isArray):
                 res.append((T_type,initVal,idname,arraySize))  
             else:    
@@ -504,7 +526,7 @@ class DECLARE:
             if(token.Name==';'):
                 break
             elif(token.Name==','):
-                getNextToken()
+                TOKEN().getNextToken()
             else:
                 exit('declare wrong')
 
@@ -552,12 +574,12 @@ class DECLARE:
         temp_valtable={}
         if(token.Name!='('):
             exit('param_declare list lack (')
-        getNextToken()
+        TOKEN().getNextToken()
         while(1):
             global ISCONST
             if(token.Name=='const'):
                 ISCONST=True
-                getNextToken()
+                TOKEN().getNextToken()
             if(token.Type=='TYPE'):
                 temp_type=token.Name
             elif(token.Name==')'):
@@ -565,7 +587,7 @@ class DECLARE:
                 break
             else:
                 exit('param_declare TYPE wrong')
-            getNextToken()
+            TOKEN().getNextToken()
             if(token.Type=='VAL'):
                 temp_valtable[token.Name]={'type':temp_type,'width':4,'offset':str(8+4*index),'reg':None,'const':ISCONST,'array':False}#ret在4($fp),第一个参数在8($fp)
                 index=index+1
@@ -573,22 +595,23 @@ class DECLARE:
             else:
                 exit('param_declare not VAL')
             
-            getNextToken()
+            TOKEN().getNextToken()
             if(token.Name==','):
-                getNextToken()
+                TOKEN().getNextToken()
             elif(token.Name==')'):
                 return temp_valtable,index
                 break
             else:
                 exit('param_declare BOUND wrong')
 
+#系统调用模块，包括printf和scanf
 class SYSTEMCALL:
     def S(self):
         opr = token.Name
-        getNextToken()
+        TOKEN().getNextToken()
         if(token.Name!='('):
             exit('expect (')
-        getNextToken()
+        TOKEN().getNextToken()
         if(opr=='scanf'):
             idname=judgeVAL(token.Name)
             gen(opr,idname)
@@ -601,76 +624,77 @@ class SYSTEMCALL:
                 E_reg=ASSIGN().E()
                 gen(opr,E_reg,'val')
 
-        getNextToken()
+        TOKEN().getNextToken()
         if(token.Name!=')'):
             exit('expect )')
-        getNextToken()
+        TOKEN().getNextToken()
         if(token.Name!=';'):
             exit('expect ;')
 
+#分支语句模块 包括if,else
 class IF:
     def S(self,S_next):
-        getNextToken()
+        TOKEN().getNextToken()
         if(token.Name!='('):
             exit('if:expect (')
 
-        getNextToken()
+        TOKEN().getNextToken()
         B_true=newLable()
         B_false=S1_next=S_next
         self.B(B_true,B_false)
         gen('label',B_true)
 
-        getNextToken()
+        TOKEN().getNextToken()
         if(token.Name!=')'):
             exit('if:expect )')
 
-        getNextToken()
+        TOKEN().getNextToken()
         if(token.Name!='{'):
             PROGRAM().single_S(S1_next)
             gen('label',S_next)
             
         else:
-            getNextToken()
+            TOKEN().getNextToken()
             PROGRAM().multi_S()
             gen('label',S_next)
 
-            getNextToken()
+            TOKEN().getNextToken()
             if(token.Name!='}'):
                 exit('if:expect }')
 
     def S_else(self,S_next):
-        getNextToken()
+        TOKEN().getNextToken()
         if(token.Name!='('):
             exit('if:expect (')
 
-        getNextToken()
+        TOKEN().getNextToken()
         B_true=newLable()
         B_false=newLable()
         S1_next=S2_next=S_next
         self.B(B_true,B_false)
         gen('label',B_true)
 
-        getNextToken()
+        TOKEN().getNextToken()
         if(token.Name!=')'):
             exit('if:expect )')
 
-        getNextToken()
+        TOKEN().getNextToken()
         if(token.Name!='{'):
             PROGRAM().single_S(S1_next)
 
         else:
-            getNextToken()
+            TOKEN().getNextToken()
             PROGRAM().multi_S()
 
-            getNextToken()
+            TOKEN().getNextToken()
             if(token.Name!='}'):
                 exit('if:expect }')
         
-        getNextToken()
+        TOKEN().getNextToken()
         if(token.Name!='else'):
             exit('if:expect else')
         
-        getNextToken()
+        TOKEN().getNextToken()
         gen('goto',S_next)
         gen('label',B_false)
         if(token.Name!='{'):
@@ -678,11 +702,11 @@ class IF:
             gen('label',S_next)
             
         else:
-            getNextToken()
+            TOKEN().getNextToken()
             PROGRAM().multi_S()
             gen('label',S_next)
 
-            getNextToken()
+            TOKEN().getNextToken()
             if(token.Name!='}'):
                 exit('if:expect }')
 
@@ -692,7 +716,7 @@ class IF:
             print('B->',token.Name)
         E1_reg=ASSIGN().E()
 
-        getNextToken()
+        TOKEN().getNextToken()
 
         print(token.Name)
         if(token.Name in COMPOPR):
@@ -700,7 +724,7 @@ class IF:
         else:
             exit('BOOL:not a cmp opr')
 
-        getNextToken()
+        TOKEN().getNextToken()
         E2_reg=ASSIGN().E()
         gen(cmp,B_true,E1_reg,E2_reg)
         gen('goto',B_false)
@@ -739,14 +763,15 @@ class IF:
                 p+=1
                 if(p>=len(tokens)):
                     return False
-        
+
+#循环语句模块，包括while，for  
 class LOOP:
     def W(self,S_next):
-        getNextToken()
+        TOKEN().getNextToken()
         if(token.Name!='('):
             exit('if:expect (')
 
-        getNextToken()
+        TOKEN().getNextToken()
         begin=newLable()
         B_true=newLable()
         B_false=S_next
@@ -754,22 +779,22 @@ class LOOP:
         gen('label',begin)
         IF().B(B_true,B_false)
 
-        getNextToken()
+        TOKEN().getNextToken()
         if(token.Name!=')'):
             exit('if:expect )')
 
-        getNextToken()
+        TOKEN().getNextToken()
         if(token.Name!='{'):
             exit('if:expect {')
 
-        getNextToken()
+        TOKEN().getNextToken()
         gen('label',B_true)
         PROGRAM().multi_S()
         
         gen('goto',begin)
         gen('label',S_next)
 
-        getNextToken()
+        TOKEN().getNextToken()
         if(token.Name!='}'):
             exit('if:expect }')
     
@@ -821,7 +846,7 @@ class LOOP:
         
         return s
 
-
+#函数调用模块
 class FUNC:
     def CALL(self):#解析调用
         if(token.Type==FUNC_CALL):
@@ -829,11 +854,11 @@ class FUNC:
         else:
             exit("CALL name wrong")
         
-        getNextToken()
+        TOKEN().getNextToken()
         if(token.Name!='('):
             exit("CALL lack (")
         
-        getNextToken()
+        TOKEN().getNextToken()
         nums=0
         stack=[]
         if(token.Name!=')'):
@@ -842,11 +867,11 @@ class FUNC:
                 stack.append(E_reg)#参数需要反向压栈
                 nums+=1
 
-                getNextToken()
+                TOKEN().getNextToken()
                 if(token.Name==')'):
                     break
                 elif(token.Name==','):
-                    getNextToken()
+                    TOKEN().getNextToken()
         
         if(FUNCTABLE[Fname]['param_num']!=nums):
             exit('func:'+Fname+' param_num not match')
@@ -863,7 +888,7 @@ class FUNC:
         gen('free',p)#外部正在使用寄存器恢复
     
     def RETURN(self):#解析return
-        getNextToken()
+        TOKEN().getNextToken()
         if(token.Name==';'):
             if(FUNCTABLE[NOWFUNC]['return_type']=='void'):
                 gen('return',None)
@@ -873,13 +898,13 @@ class FUNC:
             if(FUNCTABLE[NOWFUNC]['return_type']=='int'):
                 E_reg=ASSIGN().E()
                 gen('return',E_reg)
-                getNextToken()
+                TOKEN().getNextToken()
                 if(token.Name!=';'):
                     exit('expect ;')
             else:
                 exit('void func return int')
 
-        
+#总程序模块        
 class PROGRAM:
     def P(self):
         self.whole_declare()
@@ -889,7 +914,7 @@ class PROGRAM:
         # self.func_declare()
         self.void_main()
 
-    def func_declare(self):
+    def func_declare(self):#函数定义段
         init_func()
         if(token.Type!='TYPE'):
             exit('func declare wrong')
@@ -897,30 +922,30 @@ class PROGRAM:
             return -1
         ret_type=token.Name
 
-        getNextToken()
+        TOKEN().getNextToken()
         if(token.Type!=FUNC_DECLARE):
             exit('func name doesn\'t exist')
         Fname=token.Name
 
-        getNextToken()
+        TOKEN().getNextToken()
         global LOCAL_VALTABLE,NOWFUNC
         LOCAL_VALTABLE,param_num=DECLARE().param_list()#解析参数列表
         FUNCTABLE[Fname]['param_num']=param_num
         NOWFUNC=Fname
 
-        getNextToken()
+        TOKEN().getNextToken()
         if(token.Name!='{'):
             exit('func:'+Fname+' lack {')
         
-        getNextToken()
+        TOKEN().getNextToken()
         func_head(Fname)
 
         self.multi_S()
         func_end()
-        getNextToken()
+        TOKEN().getNextToken()
         if(token.Name!='}'):
             exit('main func lack {')
-        getNextToken()
+        TOKEN().getNextToken()
 
     def whole_declare(self):#全局定义段
         while(1):
@@ -939,7 +964,7 @@ class PROGRAM:
                 exit('whole_declare wrong')
         
             if(point_token<len(tokens)):
-                getNextToken()
+                TOKEN().getNextToken()
             else:
                 exit('lack main func')
 
@@ -947,26 +972,26 @@ class PROGRAM:
         init_func()
         if(token.Name!='void'):
             exit('main must be void')
-        getNextToken()
+        TOKEN().getNextToken()
         if(token.Name!='main'):
             exit('main func name wrong')
 
-        getNextToken()
+        TOKEN().getNextToken()
         global LOCAL_VALTABLE,NOWFUNC
         LOCAL_VALTABLE,param_num=DECLARE().param_list()#解析参数列表
         FUNCTABLE['main']['param_num']=param_num
         NOWFUNC='main'
 
-        getNextToken()
+        TOKEN().getNextToken()
         if(token.Name!='{'):
             exit('main func lack {')
-        getNextToken()
+        TOKEN().getNextToken()
 
         func_head('main')
         
         self.multi_S()
 
-        getNextToken()
+        TOKEN().getNextToken()
         if(token.Name!='}'):
             exit('main func lack {')
 
@@ -979,9 +1004,9 @@ class PROGRAM:
             gen('label',S_next)
             
             if(point_token<len(tokens)):
-                getNextToken()
+                TOKEN().getNextToken()
                 if(token.Name=='}'):
-                    tokenBack()
+                    TOKEN().tokenBack()
                     break
             else:
                 break
@@ -1034,9 +1059,9 @@ class PROGRAM:
                     ASSIGN().S()
 
                 if(point_token<len(tokens)):
-                    getNextToken()
+                    TOKEN().getNextToken()
                     if(token.Name in ['}','if','while','return']):
-                        tokenBack()
+                        TOKEN().tokenBack()
                         break
                 else:
                     break
@@ -1084,18 +1109,18 @@ class PROGRAM:
             elif(token.Type=='VAL'):
                 ASSIGN().S()
         
-print("please input filename:")
-file=input()
-with open('test/'+file+'.txt','r') as f:
-    s=f.read()
-getTokens(s)
-# for i in tokens:
-#     i.show()
 
-if(tokens[-1].Name!=';' and tokens[-1].Name!='}'):
-    exit('expect Last BOUND')
-getNextToken()
+if __name__=="__main__":
+    print("please input filename:")
+    file=input()
+    with open('test/'+file+'.txt','r') as f:
+        s=f.read()
+    TOKEN().getTokens(s)
 
-PROGRAM().P()
+    if(tokens[-1].Name!=';' and tokens[-1].Name!='}'):
+        exit('expect Last BOUND')
+    TOKEN().getNextToken()
 
-seg_show()
+    PROGRAM().P()
+
+    seg_show(file)

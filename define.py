@@ -28,6 +28,7 @@ stack_offset = -4
 tokens = []
 token = None
 MIDCODES=[]
+RESULT=[]
 
 REG_USED=set([])
 WHOLE_VALTABLE={}#全局、静态数据区 {'type':T_type,'width':4,'value':initVal,'reg':None,'const':ISCONST,'array':True}
@@ -41,7 +42,7 @@ FUNC_DECLARE='FUNC_DECLARE'
 
 ISLOCAL='islocal'
 ISWHOLE='iswhole'
-ISCONST=False
+ISCONST=False#是否为const变量
 ISBRANCH=False#是否在branch语句块内
 
 WHOLE_STRING={}
