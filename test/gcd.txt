@@ -22,7 +22,9 @@ void main()
 	while(i<=3){
 		scanf(a);
 		scanf(b);
+		
 		printf(gcd(a, b));
+		printf("\n");
 		i=i+1;
 	}
 

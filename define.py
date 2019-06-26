@@ -32,7 +32,7 @@ RESULT=[]
 
 REG_USED=set([])
 WHOLE_VALTABLE={}#全局、静态数据区 {'type':T_type,'width':4,'value':initVal,'reg':None,'const':ISCONST,'array':True}
-LOCAL_VALTABLE={}#记录局部变量在栈中的位置 LOCAL_VALTABLE[idname]={'type':T_type,'width':4,'offset':str(stack_offset),'value':initVal,'reg':None,'const':False}
+LOCAL_VALTABLE={}#记录局部变量在栈中的位置 LOCAL_VALTABLE[idname]={'type':T_type,'width':4,'offset':str(stack_offset),'value':initVal,'reg':None,'const':False,'array':True}
 
 FUNCTABLE={}#{'param_num':None,'return_type':tokens[i-1].Name}
 NOWFUNC=None

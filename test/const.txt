@@ -1,0 +1,5 @@
+void main()
+{
+	const int a;
+    a=a+1;
+}

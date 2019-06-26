@@ -1,4 +1,5 @@
 .data
+string0:	.asciiz	"\n"
 .text
 j	main
 gcd:
@@ -89,6 +90,9 @@ addi	$sp,$sp,8
 move	$t1,$v0
 li	$v0,1
 move	$a0,$t1
+syscall
+li	$v0,4
+la	$a0,string0
 syscall
 lw	$t0,-12($fp)
 addi	$t0,$t0,1
